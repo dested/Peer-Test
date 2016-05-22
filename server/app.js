@@ -1,5 +1,8 @@
 var System = require('systemjs');
 global.ts = require('typescript');
+global.http = require('http');
+global.socketIO = require('socket.io');
+
 
 System.config({
     packages: {
