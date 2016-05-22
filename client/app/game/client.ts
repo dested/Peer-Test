@@ -31,8 +31,9 @@ export class GameClient {
             peer.on('connection', (conn) => {
                 console.log('open');
                 conn.on('data', (d) => {
-                    console.log({id: conn.peer, message: d});
-                    this.zone.run(()=>this.messageEmitter.emit({id: conn.peer, message: d}))
+                    let message = {id: conn.peer, message: d.message, date: d.date};
+                    // console.log(message);
+                    this.zone.run(()=>this.messageEmitter.emit(message))
                 });
             });
         });
@@ -95,7 +96,7 @@ export class GameClient {
     sendMessage(message:string) {
         for (let connection of this.activeRoom.connections) {
             if (connection.open) {
-                connection.connection.send(message);
+                connection.connection.send({message: message, date: +new Date()});
             }
         }
     }

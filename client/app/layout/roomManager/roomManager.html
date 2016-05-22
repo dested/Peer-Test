@@ -19,11 +19,11 @@
     </div>
 
 
-    <div *ngIf="state=='ready'">
+    <div *ngIf="state=='ready'" >
 
-        <ul>
+        <ul  id="divdiv" style="overflow:scroll; height:100px;">
             <li *ngFor="#message of messages">
-                {{message.id}} - {{message.message}}
+                {{message.id}} - {{message.message}} {{message.now-message.date}}
             </li>
         </ul>
 

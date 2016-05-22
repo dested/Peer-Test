@@ -21,10 +21,17 @@ export class RoomManager implements OnInit {
         });
 
         gameClient.getMessages().subscribe((message) => {
+            message.now = +new Date();
             this.messages.push(message);
+            this.messages=this.messages.slice(-10,10)
+            var divd = document.getElementById('divdiv');
+            divd.scrollTop = divd.scrollHeight;
         });
         gameClient.getGameState().subscribe(state=> {
             this.state = state;
+            if (this.state == 'ready') {
+                this.startMonkey();
+            }
         });
     }
 
@@ -40,12 +47,21 @@ export class RoomManager implements OnInit {
     }
 
     public sendMessage(message:string):void {
-        this.messages.push({id: this.gameClient.myId, message: message});
+        this.messages.push({id: this.gameClient.myId, message: message, date: (+new Date()) + 1, now: new Date()});
         this.gameClient.sendMessage(message);
     }
 
 
     public closedWindow(done:boolean):void {
         console.log(done);
+    }
+
+    private startMonkey() {
+
+        setTimeout(()=> {
+            this.sendMessage((Math.random() * 10000).toString());
+            this.startMonkey();
+        }, Math.random() * 750)
+
     }
 }
