@@ -1,27 +1,33 @@
 <window [left]="'15%'" [top]="'0%'" [width]="'590px'" [height]="'500px'" [windowTitle]="'Room'"
         [visible]="true" (onclose)="closedWindow($event)">
 
-    <ul>
-        <li *ngFor="#room of rooms">
-            <a (click)="joinRoom(room.id)">{{room.id}} - {{room.connections.length}}</a>
-        </li>
-    </ul>
+
+    <div *ngIf="state=='none'">
+
+        <ul>
+            <li *ngFor="#room of rooms">
+                <a (click)="joinRoom(room.id)">{{room.id}} - {{room.connections.length}}</a>
+            </li>
+        </ul>
 
 
-    <input type="text" #roomId>
-    <button (click)="joinRoom(roomId.value)">Create Room</button>
+        <input type="text" #roomId>
+        <button (click)="joinRoom(roomId.value)">Create Room</button>
 
-    <button (click)="startRoom()">Start Room</button>
-    <br>
+        <button (click)="startRoom()">Start Room</button>
+        <br>
+    </div>
 
 
-    <ul>
-        <li *ngFor="#message of messages">
-            {{message.id}} - {{message.message}}
-        </li>
-    </ul>
+    <div *ngIf="state=='ready'">
 
-    <input type="text" #message>
-    <button (click)="sendMessage(message.value);message.value=''">Send Message</button>
+        <ul>
+            <li *ngFor="#message of messages">
+                {{message.id}} - {{message.message}}
+            </li>
+        </ul>
 
+        <input type="text" #message>
+        <button (click)="sendMessage(message.value);message.value=''">Send Message</button>
+    </div>
 </window>

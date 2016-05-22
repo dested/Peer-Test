@@ -10,17 +10,21 @@ import {GameClient, Room} from "../../game/client";
     providers: [GameClient]
 })
 export class RoomManager implements OnInit {
-    @Input() public clientId:string;
-    private rooms:Room;
-    private messages = [];
+    public state:string;
+    public rooms:Room;
+    public messages = [];
 
     constructor(private gameClient:GameClient) {
+        this.state = "none";
         gameClient.getRooms().subscribe((rooms) => {
             this.rooms = rooms;
         });
 
         gameClient.getMessages().subscribe((message) => {
             this.messages.push(message);
+        });
+        gameClient.getGameState().subscribe(state=> {
+            this.state = state;
         });
     }
 
@@ -36,6 +40,7 @@ export class RoomManager implements OnInit {
     }
 
     public sendMessage(message:string):void {
+        this.messages.push({id: this.gameClient.myId, message: message});
         this.gameClient.sendMessage(message);
     }
 

@@ -1,4 +1,6 @@
 export class GameServer {
+    private connections:Connection[] = [];
+    private rooms:Room[] = [];
 
     constructor() {
         let app = global.http.createServer();
@@ -6,35 +8,26 @@ export class GameServer {
 
         app.listen(8844);
 
-        let connections:Connection[] = [];
-
-        let rooms:Room[] = [];
 
         let id = 0;
         io.on('connection', (socket) => {
             let connection:Connection = {socket: socket, id: (id++).toString(), room: null};
-            connections.push(connection);
+            this.connections.push(connection);
             socket.emit('set:id', connection.id);
             socket.on('get:rooms', ()=> {
-                socket.emit('rooms', rooms.map((room)=> {
-                    return {
-                        id: room.id, connections: room.connections.map((c)=> {
-                            return {id: c.id};
-                        })
-                    };
-                }));
+                this.sendRooms([connection]);
             });
 
             socket.on('join:room', (data)=> {
                 if (connection.room) {
                     connection.room.connections.splice(connection.room.connections.indexOf(connection), 1);
                     if (connection.room.connections.length == 0) {
-                        rooms.splice(rooms.indexOf(connection.room), 1);
+                        this.rooms.splice(this.rooms.indexOf(connection.room), 1);
                     }
                 }
                 let joined = false;
-                for (let i = 0; i < rooms.length; i++) {
-                    let room = rooms[i];
+                for (let i = 0; i < this.rooms.length; i++) {
+                    let room = this.rooms[i];
                     if (room.id == data.roomId) {
                         joined = true;
                         room.connections.push(connection);
@@ -45,9 +38,11 @@ export class GameServer {
                 if (!joined) {
                     let room:Room = {id: data.roomId, connections: []};
                     room.connections.push(connection);
-                    rooms.push(room);
+                    this.rooms.push(room);
                     connection.room = room;
                 }
+
+                this.sendRooms(this.connections);
             });
 
 
@@ -63,14 +58,29 @@ export class GameServer {
                 if (connection.room) {
                     connection.room.connections.splice(connection.room.connections.indexOf(connection), 1);
                     if (connection.room.connections.length == 0) {
-                        rooms.splice(rooms.indexOf(connection.room), 1);
+                        this.rooms.splice(this.rooms.indexOf(connection.room), 1);
                     }
                 }
-                connections.splice(connections.indexOf(connection), 1);
+                this.connections.splice(this.connections.indexOf(connection), 1);
+
+                this.sendRooms(this.connections);
             });
 
         });
 
+    }
+
+    private sendRooms(connections:Connection[]) {
+        let data = this.rooms.map(room=> {
+            return {
+                id: room.id, connections: room.connections.map((c)=> {
+                    return {id: c.id};
+                })
+            };
+        });
+        for (var connection of connections) {
+            connection.socket.emit('rooms', data);
+        }
     }
 }
 

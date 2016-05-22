@@ -1,59 +1,52 @@
-import {Injectable, EventEmitter} from "angular2/core";
-import {Observable} from 'rxjs/Observable';
+import {Injectable, EventEmitter, NgZone} from "angular2/core";
 import 'rxjs/Rx';
 
 @Injectable()
 export class GameClient {
     private socket:SocketIOClient.Socket;
-    private roomEmitter:any;
-    private messageEmitter:any;
+    private roomEmitter:EventEmitter<Room[]>;
+    private messageEmitter:EventEmitter<{id:string,message:string}>;
+    private gameStateEmitter:EventEmitter<string>;
     private activeRoom:ActiveRoom;
+    myId:string;
 
-    constructor() {
+    constructor(private zone:NgZone) {
         this.roomEmitter = new EventEmitter();
         this.messageEmitter = new EventEmitter();
+        this.gameStateEmitter = new EventEmitter();
 
         this.socket = io('http://localhost:8844');
 
 
-        setInterval(()=> {
-            this.socket.emit('get:rooms');
-        }, 1000);
-
-        let myId:string;
         let rooms:Room[];
         let peer:PeerJs.Peer;
 
         this.socket.on('set:id', (data) => {
-            myId = data;
+            this.myId = data;
             console.log(data);
-            peer = new Peer(myId, {
+            peer = new Peer(this.myId, {
                 host: 'localhost', port: 9000, path: '/',
-                debug: 3/*,
-                 logFunction: function () {
-                 var copy = Array.prototype.slice.call(arguments).join(' ');
-                 console.log(copy);
-                 }*/
+                debug: 3
             });
             peer.on('connection', (conn) => {
                 console.log('open');
                 conn.on('data', (d) => {
-                    console.log({id: conn.peer, message: d})
-                    this.messageEmitter.next({id: conn.peer, message: d});
+                    console.log({id: conn.peer, message: d});
+                    this.zone.run(()=>this.messageEmitter.emit({id: conn.peer, message: d}))
                 });
             });
         });
 
         this.socket.on('rooms', (data) => {
             rooms = data;
-            this.roomEmitter.next(rooms);
+            this.roomEmitter.emit(rooms);
         });
 
 
         this.socket.on('start:room', (data) => {
             this.activeRoom = {connections: []};
 
-            for (var i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
                 let id = data[i];
 
                 let conn = peer.connect(id);
@@ -63,18 +56,31 @@ export class GameClient {
                 conn.on('open', ()=> {
                     activeConnection.open = true;
 
+                    let count = 0;
+                    for (var con of this.activeRoom.connections) {
+                        if (con.open) {
+                            count++;
+                        }
+                    }
+                    if (count == this.activeRoom.connections.length - 1) {
+                        this.zone.run(()=>this.gameStateEmitter.emit('ready'))
+                    }
                 });
             }
         });
 
     }
 
-    getRooms():any {
+    getRooms():EventEmitter<Room[]> {
         return this.roomEmitter;
     }
 
-    getMessages() {
+    getMessages():EventEmitter<{id:string,message:string}> {
         return this.messageEmitter;
+    }
+
+    getGameState():EventEmitter<string> {
+        return this.gameStateEmitter;
     }
 
     joinRoom(id:string) {
@@ -87,7 +93,7 @@ export class GameClient {
 
 
     sendMessage(message:string) {
-        for (var connection of this.activeRoom.connections) {
+        for (let connection of this.activeRoom.connections) {
             if (connection.open) {
                 connection.connection.send(message);
             }
