@@ -5,28 +5,37 @@ for (var obj in WebRTC) {
     global[obj] = WebRTC[obj];
 }
 
-global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 global. WebSocket = require('ws');
 
 require('./peer.js');
+var System = require('systemjs');
+global.ts = require('typescript');
+global.http = require('http');
+global.io = require('socket.io-client');
 
-var peer = new Peer('j', {
-    host: 'localhost', port: 9000, path: '/',
-    debug: 3
+
+System.config({
+    packages: {
+        '': {
+            main: 'main.ts',
+            defaultExtension: 'ts',
+            meta: {
+                '*': {
+                    format: 'esm'
+                }
+            }
+        }
+    },
+    transpiler: 'typescript',
+    baseURL: '',
+    typescriptOptions: {
+        resolveTypings: true,
+        emitDecoratorMetadata: true,
+        sourceMap: true,
+        inlineSourceMap: true
+    }
 });
-peer.on('connection', (conn) => {
-    console.log('o7pen');
-    conn.on('data', (d) => {
-        let message = {id: conn.peer, message: d.message, date: d.date, now: +new Date()};
-console.log(message.id, message.now - message.date);
-//         this.messageEmitter.emit(message);
-    });
-});
-
-
-
-let conn = peer.connect('1', {serialization: 'json'});
-
-conn.on('open', ()=> {
-   console.log('open')
+global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+System.import('').catch(function(){
+    console.log(arguments);
 });

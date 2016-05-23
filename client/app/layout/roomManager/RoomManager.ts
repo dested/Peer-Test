@@ -1,6 +1,6 @@
 import {Component, OnInit, Input, NgZone} from 'angular2/core';
 import {WindowComponent} from "../windowComponent/WindowComponent";
-import {GameClient, Room} from "../../game/client";
+import {GameClient, Room} from "../../game/gameClient";
 
 
 @Component({
