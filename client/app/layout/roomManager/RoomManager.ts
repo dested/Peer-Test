@@ -1,4 +1,4 @@
-import {Component, OnInit, Input} from 'angular2/core';
+import {Component, OnInit, Input, NgZone} from 'angular2/core';
 import {WindowComponent} from "../windowComponent/WindowComponent";
 import {GameClient, Room} from "../../game/client";
 
@@ -11,21 +11,21 @@ import {GameClient, Room} from "../../game/client";
 })
 export class RoomManager implements OnInit {
     public state:string;
-    public rooms:Room;
+    public rooms:Room[];
     public messages = [];
+    public inRoom:boolean=false;
 
     constructor(private gameClient:GameClient) {
         this.state = "none";
         gameClient.getRooms().subscribe((rooms) => {
             this.rooms = rooms;
+            if(this.rooms.length>0 && !this.inRoom){
+                this.joinRoom(this.rooms[0].id);
+            }
         });
-
         gameClient.getMessages().subscribe((message) => {
-            message.now = +new Date();
             this.messages.push(message);
-            this.messages=this.messages.slice(-10,10)
-            var divd = document.getElementById('divdiv');
-            divd.scrollTop = divd.scrollHeight;
+            this.messages = this.messages.slice(-10, 10)
         });
         gameClient.getGameState().subscribe(state=> {
             this.state = state;
@@ -39,6 +39,7 @@ export class RoomManager implements OnInit {
     }
 
     public joinRoom(id:string):void {
+        this.inRoom=true;
         this.gameClient.joinRoom(id);
     }
 
@@ -61,7 +62,7 @@ export class RoomManager implements OnInit {
         setTimeout(()=> {
             this.sendMessage((Math.random() * 10000).toString());
             this.startMonkey();
-        }, Math.random() * 750)
+        }, Math.random() * 16)
 
     }
 }

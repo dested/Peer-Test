@@ -31,9 +31,9 @@ export class GameClient {
             peer.on('connection', (conn) => {
                 console.log('open');
                 conn.on('data', (d) => {
-                    let message = {id: conn.peer, message: d.message, date: d.date};
-                    // console.log(message);
-                    this.zone.run(()=>this.messageEmitter.emit(message))
+                    let message = {id: conn.peer, message: d.message, date: d.date, now: +new Date()};
+                    // console.log(message.id, message.now - message.date);
+                    this.messageEmitter.emit(message);
                 });
             });
         });
@@ -50,7 +50,7 @@ export class GameClient {
             for (let i = 0; i < data.length; i++) {
                 let id = data[i];
 
-                let conn = peer.connect(id);
+                let conn = peer.connect(id, {serialization: 'json'});
                 let activeConnection = {connection: conn, id: id, open: false};
                 this.activeRoom.connections.push(activeConnection);
 
@@ -63,7 +63,7 @@ export class GameClient {
                             count++;
                         }
                     }
-                    if (count == this.activeRoom.connections.length - 1) {
+                    if (count == this.activeRoom.connections.length) {
                         this.zone.run(()=>this.gameStateEmitter.emit('ready'))
                     }
                 });
